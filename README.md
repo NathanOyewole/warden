@@ -12,7 +12,7 @@ print(a);         // REJECTED: use of moved value `a`
 
 No `&`, no `&mut`, no lifetimes - deliberately. Warden isolates *only* the ownership half of Rust's borrow checker, proving that half in isolation is simple and learnable, and showing precisely why the other half (borrowing, lifetimes, aliasing) is where the real difficulty lives.
 
-This is a thesis project for a self-practice, but CS major: the point is not to build a tool, but to *demonstrate understanding* of compiler architecture and static analysis by rebuilding a piece of Rust's core idea from scratch.
+This is a CS-major thesis project, built as self-practice: the point is not to build a tool, but to *demonstrate understanding* of compiler architecture and static analysis by rebuilding a piece of Rust's core idea from scratch.
 
 ## The problem it addresses
 
