@@ -1,0 +1,7 @@
+// `a` was declared outside the loop. Moving it inside the loop body is
+// rejected -- the loop might run more than once, and the second
+// iteration would find `a` already moved.
+let a = 1;
+while (a) {
+    let b = a;
+}

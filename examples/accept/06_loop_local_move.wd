@@ -1,0 +1,8 @@
+// Moving a variable that was declared *inside* the loop body is safe --
+// it's fresh conceptually on every iteration.
+let a = 1;
+while (a) {
+    let x = 7;
+    let y = x;
+    print(y);
+}

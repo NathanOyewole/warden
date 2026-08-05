@@ -1,0 +1,4 @@
+// A basic move: `a` is moved into `b`. `b` is used afterward, `a` is not.
+let a = 5;
+let b = a;
+print(b);

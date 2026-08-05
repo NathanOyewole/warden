@@ -1,0 +1,5 @@
+// `a` is moved into `b`, then moved again into `c` -- the second move
+// is illegal because `a` has nothing left to give.
+let a = 5;
+let b = a;
+let c = a;

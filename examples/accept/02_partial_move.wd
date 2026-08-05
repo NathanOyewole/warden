@@ -1,0 +1,7 @@
+// Moving one field out of a struct leaves the other field usable.
+struct Point { x, y }
+
+let p = Point { x: 1, y: 2 };
+let px = p.x;
+print(p.y);
+print(px);

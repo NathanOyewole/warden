@@ -1,0 +1,7 @@
+// Passing a value into a function moves it into that function's scope.
+fn consume(v) {
+    print(v);
+}
+
+let s = 42;
+consume(s);

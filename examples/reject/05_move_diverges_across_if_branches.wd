@@ -1,0 +1,10 @@
+// `a` is moved on the `if` branch but not the `else` branch. Warden's
+// checker isn't path-sensitive, so it conservatively treats `a` as
+// moved after the if/else no matter which path actually ran.
+let a = 5;
+if (a) {
+    let b = a;
+} else {
+    print(0);
+}
+print(a);

@@ -1,0 +1,10 @@
+// `a` is moved on both branches, so after the if/else it's considered
+// fully moved either way -- but shadowing with a new `let` fixes that.
+let a = 5;
+if (a) {
+    let b = a;
+} else {
+    let c = a;
+}
+let a = 99;
+print(a);

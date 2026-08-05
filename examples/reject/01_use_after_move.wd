@@ -1,0 +1,4 @@
+// `a` is moved into `b`; printing `a` afterward is a use of a moved value.
+let a = 5;
+let b = a;
+print(a);

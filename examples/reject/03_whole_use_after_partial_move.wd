@@ -1,0 +1,7 @@
+// One field of `p` has been moved out, so using `p` as a whole value
+// (not just the remaining field) is rejected.
+struct Point { x, y }
+
+let p = Point { x: 1, y: 2 };
+let px = p.x;
+print(p);

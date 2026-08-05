@@ -1,0 +1,9 @@
+// `s` is moved into `consume`; using it again afterward is rejected,
+// the same way it would be if you'd moved it into another `let`.
+fn consume(v) {
+    print(v);
+}
+
+let s = 5;
+consume(s);
+print(s);

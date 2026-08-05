@@ -1,0 +1,6 @@
+// Moving `a` "uses it up," but a fresh `let a = ...` shadows it with a
+// brand new, fully owned binding -- this is legal in real Rust too.
+let a = 5;
+let b = a;
+let a = 10;
+print(a);
