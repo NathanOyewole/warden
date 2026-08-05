@@ -1,4 +1,4 @@
-# Warden — Project Overview
+# Warden - Project Overview
 
 Warden is a minimal ownership checker, built to understand *why* Rust's
 real borrow checker is hard, by building the simplest possible version
@@ -32,17 +32,17 @@ no lifetimes and no borrowing.
 ```
 
 Four stages. Each one only knows about the stage immediately before
-it — the lexer never thinks about grammar, the parser never thinks
+it - the lexer never thinks about grammar, the parser never thinks
 about ownership, the checker never thinks about actual runtime values.
 That separation of concerns is the single most important idea in
 compiler architecture — more important than any individual algorithm.
 
 ## Reading order
 
-1. [`01-lexer.md`](./01-lexer.md) — characters → tokens
-2. [`02-parser.md`](./02-parser.md) — tokens → AST
-3. [`03-checker.md`](./03-checker.md) — the ownership analysis (the thesis of the project)
-4. [`04-interpreter.md`](./04-interpreter.md) — AST → running program
+1. [`01-lexer.md`](./01-lexer.md) - characters → tokens
+2. [`02-parser.md`](./02-parser.md) - tokens → AST
+3. [`03-checker.md`](./03-checker.md) - the ownership analysis (the thesis of the project)
+4. [`04-interpreter.md`](./04-interpreter.md) - AST → running program
 
 Each doc walks the corresponding `src/*.rs` file section by section,
 explains the Rust syntax used (not just the compiler-design ideas), and

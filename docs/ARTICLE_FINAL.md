@@ -1,12 +1,3 @@
-<!--
-SEO metadata (for platform "title"/"description" fields — not part of the
-rendered article body):
-Title tag: Warden: A Minimal Rust Ownership Checker, Built to Understand the Borrow Checker
-Meta description: I built a stripped-down ownership checker in Rust — no borrowing, no lifetimes — to understand exactly why Rust's real borrow checker is hard. Full source, tests, and a 12-program example suite included.
-Tags: rust, compilers, ownership, borrow-checker, programming-languages
-Canonical: publish on your own site first if you have one, then cross-post with a "originally published at ___" note.
--->
-
 # Warden: Building a Minimal Ownership Checker to Understand Why Rust's Is Hard
 
 *A stripped-down ownership checker, built from scratch in Rust, to isolate the one idea in Rust that's actually simple — and find the exact edge where it stops being simple.*
