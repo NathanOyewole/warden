@@ -1,27 +1,14 @@
-//! The ownership checker: a static analysis pass over the AST that
-//! decides whether a program is allowed to run, before we ever
-//! interpret it. This file is deliberately the most heavily commented
-//! in the project — it's the actual thesis of the whole piece.
+//! Ownership checker: static analysis over the AST.
 //!
-//! Core model: every binding is in one of three states.
+//! Every binding is in one of three states:
 //!   Owned              — fully available
-//!   Moved               — used up; any further use is an error
+//!   Moved              — used up; further use is an error
 //!   PartiallyMoved(set) — some struct fields moved, others still usable
 //!
-//! Known, deliberate simplifications vs. real Rust (documented so the
-//! article can point at them directly):
-//!   1. Everything moves — there's no Copy-type exception. `let a = 5;
-//!      let b = a;` really does invalidate `a`, even though real Rust
-//!      would let you do this for an i32. This keeps the core lesson
-//!      undiluted by a second concept.
-//!   2. If/else merging is NOT path-sensitive. If a variable is moved
-//!      in only one branch, we conservatively treat it as moved after
-//!      the `if` entirely, rather than tracking "moved on this path,
-//!      fine on that path." Real Rust does the harder, precise version.
-//!   3. Loop-move checking is a single static pass, not a fixed-point
-//!      iteration. We forbid moving any variable that existed *before*
-//!      the loop from inside the loop body, full stop — we don't
-//!      attempt to prove some loops only run once.
+//! Deliberate simplifications vs. real Rust:
+//!   1. Everything moves (no Copy exception).
+//!   2. If/else merge is not path-sensitive — divergence ⇒ Moved.
+//!   3. Outer-loop moves are forbidden (no fixed-point analysis).
 
 use std::collections::{HashMap, HashSet};
 
@@ -46,8 +33,6 @@ impl Checker {
     }
 
     pub fn check_program(&mut self, program: &Program) -> Result<(), String> {
-        // Pre-register struct definitions so field lookups work regardless
-        // of where in the file the struct is defined relative to its use.
         for stmt in program {
             if let Stmt::StructDef { name, fields } = stmt {
                 self.structs.insert(name.clone(), fields.clone());
@@ -80,14 +65,9 @@ impl Checker {
         loop_locals: &HashSet<String>,
     ) -> Result<(), String> {
         match stmt {
-            Stmt::StructDef { .. } => Ok(()), // already registered in check_program
+            Stmt::StructDef { .. } => Ok(()),
 
             Stmt::FnDef { params, body, .. } => {
-                // Function bodies are checked in total isolation: a fresh
-                // scope containing only the parameters. Warden has no
-                // closures, so a function can never see outer bindings —
-                // which sidesteps an entire category of capture-move
-                // rules real Rust has to handle.
                 let mut fn_scope = Scope::new();
                 for p in params {
                     fn_scope.insert(p.clone(), VarState::Owned);
@@ -99,10 +79,6 @@ impl Checker {
             Stmt::Let { name, value } => {
                 self.check_use(value, scope)?;
                 self.apply_move(value, scope, loop_depth, loop_locals)?;
-                // A `let` always creates a fresh binding, even if `name`
-                // already existed. This is what makes "move, then
-                // reassign" legal: shadowing resets the state to Owned
-                // regardless of what happened to the old binding.
                 scope.insert(name.clone(), VarState::Owned);
                 Ok(())
             }
@@ -114,8 +90,6 @@ impl Checker {
             }
 
             Stmt::If { cond, then_branch, else_branch } => {
-                // The condition is read, not moved — Warden has no
-                // boolean bindings to move, only a truthy numeric check.
                 self.check_use(cond, scope)?;
 
                 let mut then_scope = scope.clone();
@@ -133,9 +107,6 @@ impl Checker {
             Stmt::While { cond, body } => {
                 self.check_use(cond, scope)?;
 
-                // Anything `let`-bound directly in the loop body is fresh
-                // each iteration, so moving it is safe — only variables
-                // that existed *before* the loop are dangerous to move.
                 let mut new_loop_locals: HashSet<String> = HashSet::new();
                 for s in body {
                     if let Stmt::Let { name, .. } = s {
@@ -146,8 +117,6 @@ impl Checker {
                 let mut body_scope = scope.clone();
                 self.check_block(body, &mut body_scope, loop_depth + 1, &new_loop_locals)?;
 
-                // Propagate any legitimate state changes (e.g. shadowing)
-                // back out for variables that existed before the loop.
                 for (k, v) in body_scope.iter() {
                     if scope.contains_key(k) {
                         scope.insert(k.clone(), v.clone());
@@ -158,12 +127,7 @@ impl Checker {
         }
     }
 
-    /// Conservative merge: a variable is only Owned after the if/else if
-    /// it was Owned on *both* paths. Any divergence — including "moved
-    /// on one path, fine on the other" — is treated as Moved. This is
-    /// the simplification called out in the module doc comment; it's
-    /// strictly more restrictive than real Rust, not less, so it never
-    /// silently accepts something unsound.
+    /// Merge branch scopes: Owned only if Owned on both paths; else Moved.
     fn merge_branches(&self, scope: &mut Scope, then_scope: &Scope, else_scope: &Scope) {
         let keys: HashSet<&String> = then_scope.keys().chain(else_scope.keys()).collect();
         for k in keys {
@@ -179,9 +143,6 @@ impl Checker {
         }
     }
 
-    /// Check that `expr` can legally be *read* right now — the value
-    /// it refers to hasn't already been moved away. This never mutates
-    /// state; `apply_move` does that afterward.
     fn check_use(&self, expr: &Expr, scope: &Scope) -> Result<(), String> {
         match expr {
             Expr::Number(_) => Ok(()),
@@ -227,10 +188,6 @@ impl Checker {
                         }
                     }
                 } else {
-                    // Nested field chains (a.b.c) fall back to checking
-                    // the inner base only — one level of partial-move
-                    // tracking is enough to make the point without a
-                    // full recursive field-path lattice.
                     self.check_use(base, scope)
                 }
             }
@@ -251,9 +208,6 @@ impl Checker {
         }
     }
 
-    /// After a value has been read successfully, mark whatever it
-    /// referenced as moved. This is where loop-move and partial-move
-    /// rules actually take effect.
     fn apply_move(
         &self,
         expr: &Expr,
@@ -296,8 +250,6 @@ impl Checker {
                             set.insert(field.clone());
                         }
                         VarState::Moved => {
-                            // check_use would already have rejected this;
-                            // reaching here means base was fully moved.
                             return Err(format!("use of moved value `{}`", name));
                         }
                     }
